@@ -29,6 +29,8 @@ interface Props {
   className?: string;
   initialPreset?: TimeOfDayPreset;
   showControls?: boolean;
+  /** Hide the floating phase/time HUD badge (useful when the sky is a page background). */
+  showHud?: boolean;
   autoPlay?: boolean;
   cycleDurationSeconds?: number;
   onTimeChange?: (timeOfDay: number) => void;
@@ -39,6 +41,7 @@ export function AnimatedSolarSky({
   className = "",
   initialPreset = "sunset",
   showControls = true,
+  showHud = true,
   autoPlay = true,
   cycleDurationSeconds = 45,
   onTimeChange,
@@ -631,7 +634,7 @@ export function AnimatedSolarSky({
       />
 
       {/* 3. Floating HUD / Live Solar Generation Badge */}
-      {!hideUI && (
+      {showHud && !hideUI && (
         <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-auto">
           <div className="flex items-center gap-2 rounded-xl border border-white/25 bg-slate-950/65 px-3 py-1.5 text-white backdrop-blur-md shadow-lg transition-all">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />

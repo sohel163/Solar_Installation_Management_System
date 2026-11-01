@@ -10,6 +10,7 @@ import { useSession, logout } from "@/hooks/useSession";
 import { DEMO_MODE } from "@/services";
 import { DemoPill, Modal } from "@/components/ui";
 import { AnimatedSolarSky } from "@/components/AnimatedSolarSky";
+import VideoBackdrop from "@/components/VideoBackdrop";
 import { SunPowerLogo } from "@/components/SunPowerLogo";
 
 const NAV = [
@@ -35,7 +36,9 @@ export default function AppShell() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="relative z-10 flex min-h-screen">
+      {/* Ambient background video (only visible where the theme paints nothing) */}
+      <VideoBackdrop />
       {/* Mobile overlay */}
       {open && <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={() => setOpen(false)} />}
       {/* Sidebar */}

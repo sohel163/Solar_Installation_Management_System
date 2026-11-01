@@ -10,6 +10,8 @@ import type {
 import {
   processSolarBotQuery,
   clearConversationHistory,
+  getChatTranscript,
+  saveChatTranscript,
   executeSubmitEnquiry,
   executeRequestSurvey,
   executeCreateTicket,
@@ -38,23 +40,62 @@ What would you like to know today?`;
 
 const SUGGESTED_QUESTIONS = [
   "Calculate my solar savings.",
-  "Find the right solar system for my home.",
   "Check installation prices.",
   "Learn about government subsidies.",
-  "Track my solar installation.",
+  "What does this app do?",
+  "How do I log in to this website?",
+  "What is net metering?",
+  "Where can I see quotations?",
   "Find a nearby solar technician.",
 ];
 
+/**
+ * Minimal safe rich-text renderer for bot replies: **bold**, `code`,
+ * and *italic* — no dangerouslySetInnerHTML, so no injection risk.
+ */
+function renderRich(text: string) {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g);
+  return tokens.map((tok, i) => {
+    if (tok.startsWith("**") && tok.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-white">{tok.slice(2, -2)}</strong>;
+    }
+    if (tok.startsWith("`") && tok.endsWith("`") && tok.length > 1) {
+      return <code key={i} className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[10.5px] text-emerald-300">{tok.slice(1, -1)}</code>;
+    }
+    if (tok.startsWith("*") && tok.endsWith("*") && tok.length > 1 && !tok.startsWith("**")) {
+      return <em key={i} className="opacity-90">{tok.slice(1, -1)}</em>;
+    }
+    return <span key={i}>{tok}</span>;
+  });
+}
+
 export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Props) {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "initial-welcome",
-      sender: "bot",
-      text: INITIAL_WELCOME,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    },
-  ]);
+  // Conversation survives close/minimize: state is restored from the service
+  // module-level transcript instead of resetting to just the welcome message.
+  const [messagesRaw, setMessagesRaw] = useState<ChatMessage[]>(() => {
+    const t = getChatTranscript();
+    if (t.length > 0) return t;
+    return [
+      {
+        id: "initial-welcome",
+        sender: "bot",
+        text: INITIAL_WELCOME,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ];
+  });
+  // Every update is mirrored into the service transcript.
+  const setMessages = (
+    update: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
+  ) => {
+    setMessagesRaw((prev) => {
+      const next = typeof update === "function" ? update(prev) : update;
+      saveChatTranscript(next);
+      return next;
+    });
+  };
+  const messages = messagesRaw;
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
@@ -67,6 +108,9 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Serializes bot responses in order; messages typed while the bot is
+  // "typing" are queued instead of silently dropped.
+  const processingRef = useRef<Promise<void>>(Promise.resolve());
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -84,14 +128,14 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
 
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend ?? inputText).trim();
-    if (!text || isTyping) return;
+    if (!text) return;
 
     setErrorNotice(null);
     setInputText("");
 
-    // Append user message
+    // Append user message immediately — even while the bot is responding.
     const userMsg: ChatMessage = {
-      id: "usr-" + Date.now(),
+      id: "usr-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
       sender: "user",
       text,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -100,14 +144,18 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
-    try {
-      const botResponse = await processSolarBotQuery(text, session);
-      setMessages((prev) => [...prev, botResponse]);
-    } catch {
-      setErrorNotice("Connection interrupted. Please click below to retry.");
-    } finally {
-      setIsTyping(false);
-    }
+    // Queue the bot's turn after any in-flight turns, preserving order.
+    processingRef.current = processingRef.current.then(async () => {
+      try {
+        const botResponse = await processSolarBotQuery(text, session);
+        setMessages((prev) => [...prev, botResponse]);
+      } catch {
+        setErrorNotice("Connection interrupted. Please click below to retry.");
+      } finally {
+        setIsTyping(false);
+      }
+    });
+    await processingRef.current;
   };
 
   const handleClearChat = () => {
@@ -149,7 +197,7 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
         setMessages((prev) => [
           ...prev,
           {
-            id: "bot-" + Date.now(),
+            id: "bot-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
             sender: "bot",
             text: res.message,
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -181,7 +229,7 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
         setMessages((prev) => [
           ...prev,
           {
-            id: "bot-" + Date.now(),
+            id: "bot-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
             sender: "bot",
             text: res.message,
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -280,7 +328,7 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
                       : "rounded-tl-xs bg-slate-900 border border-white/10 text-slate-200"
                   }`}
                 >
-                  {m.text}
+                  {isUser ? m.text : renderRich(m.text)}
 
                   {/* Render Embedded Action Cards */}
                   {m.actionCard?.type === "calculator" && (
@@ -312,6 +360,9 @@ export function SolarBotChatPanel({ isOpen, onClose, onMinimize, session }: Prop
                   <span>{m.timestamp}</span>
                   {m.source === "live" && (
                     <span className="text-amber-400 font-mono">· Live AI</span>
+                  )}
+                  {m.source === "expert_rules" && (
+                    <span>· Solar expert engine</span>
                   )}
                 </div>
               </div>

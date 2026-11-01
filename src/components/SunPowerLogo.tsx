@@ -197,3 +197,4 @@ export function SunPowerLogo({
 }
 
 export default SunPowerLogo;
+

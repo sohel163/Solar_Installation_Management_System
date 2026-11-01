@@ -593,21 +593,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 7. FOOTER */}
-      <footer className="mt-auto border-t border-white/10 bg-slate-950 py-10 px-4 text-xs text-slate-500">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 text-slate-400">
-            <SunPowerLogo size="xs" variant="bare" />
-            <span className="font-semibold text-slate-300">SunPower</span> — From First Lead to Lifetime Solar Service
+      {/* 7. FOOTER — theme band */}
+      <footer className="mt-auto border-t border-brand-100 bg-brand-50/70">
+        <div className="px-4 py-10">
+          <div className="mx-auto w-full max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 px-1 text-xs text-brand-900/80">
+            <div className="flex items-center gap-2.5">
+              <SunPowerLogo size="xs" variant="bare" />
+              <span className="font-semibold">SunPower</span>
+              <span className="opacity-80">— From First Lead to Lifetime Solar Service</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 font-semibold">
+              <Link to="/login" className="hover:opacity-70 transition">Sign In</Link>
+              <Link to="/login" className="hover:opacity-70 transition">Create Account</Link>
+              <Link to="/technicians" className="hover:opacity-70 transition">Nearby Service Persons</Link>
+              <Link to="/dashboard" className="hover:opacity-70 transition">Operations Dashboard</Link>
+              <Link to="/portal" className="hover:opacity-70 transition">Customer Portal</Link>
+            </div>
+            <p className="opacity-80">© 2026 SunPower Solutions. All rights reserved.</p>
           </div>
-          <div className="flex gap-4">
-            <Link to="/login" className="hover:text-slate-300 transition">Sign In</Link>
-            <Link to="/login" className="hover:text-slate-300 transition">Create Account</Link>
-            <Link to="/technicians" className="hover:text-slate-300 transition">Nearby Service Persons</Link>
-            <Link to="/dashboard" className="hover:text-slate-300 transition">Operations Dashboard</Link>
-            <Link to="/portal" className="hover:text-slate-300 transition">Customer Portal</Link>
-          </div>
-          <p>© 2026 SunPower Solutions. All rights reserved.</p>
         </div>
       </footer>
     </div>

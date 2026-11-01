@@ -12,8 +12,8 @@ import {
 import { setSession } from "@/hooks/useSession";
 import { useToast } from "@/components/toast";
 import { DEMO_MODE } from "@/services";
-import { AnimatedSolarSky } from "@/components/AnimatedSolarSky";
 import { SunPowerLogo } from "@/components/SunPowerLogo";
+import { AnimatedSolarSky } from "@/components/AnimatedSolarSky";
 import { isSupabaseConfigured } from "@/services/supabase";
 import type { Role } from "@/types";
 
@@ -94,10 +94,10 @@ export default function LoginPage() {
   };
 
   return (
-    <AnimatedSolarSky className="min-h-screen p-4 flex items-center justify-center">
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-white/40 bg-white/94 shadow-2xl backdrop-blur-xl md:grid-cols-2">
+    <AnimatedSolarSky className="min-h-screen" showControls={false} showHud={false} autoPlay>
+      <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/40 bg-white/94 shadow-2xl backdrop-blur-xl m-4 md:m-6 md:grid md:grid-cols-2">
         {/* Brand side */}
-        <div className="hidden flex-col justify-between bg-gradient-to-br from-emerald-950/90 via-emerald-900/85 to-brand-900/90 p-8 text-white backdrop-blur-md md:flex border-r border-white/10">
+        <div className="hidden flex-col justify-between bg-emerald-950/80 bg-gradient-to-br from-emerald-950/80 via-emerald-900/70 to-brand-900/80 p-8 text-white backdrop-blur-md md:flex border-r border-white/10">
           <div>
             <div className="flex items-center gap-3">
               <SunPowerLogo size="lg" variant="glass" />
